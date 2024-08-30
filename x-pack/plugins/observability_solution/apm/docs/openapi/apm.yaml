@@ -2,10 +2,14 @@ openapi: 3.0.0
 info:
   title: APM UI
   version: 1.0.0
+  description: Kibana APIs for working with the APM UI.
 tags:
   - name: APM agent keys
     description: >
       Configure APM agent keys to authorize requests from APM agents to the APM Server.
+    externalDocs:
+      description: APM agent API key documentation
+      url: https://www.elastic.co/guide/en/observability/current/apm-api-key.html
   - name: APM annotations
     description: >
       Annotate visualizations in the APM app with significant events.
@@ -14,7 +18,11 @@ paths:
   /api/apm/agent_keys:
     post:
       summary: Create an APM agent key
-      description: Create a new agent key for APM.
+      description: |
+        Create an APM agent API key.
+        Specify API key privileges in the request body at creation time.
+
+        You must have at least the `manage_own_api_key` cluster privilege and the APM application-level privileges that it wishes to grant. For more information refer to [Grant privileges and roles needed for API key management](https://www.elastic.co/guide/en/observability/current/apm-privileges-api-key.html).
       operationId: createAgentKey
       tags:
         - APM agent keys
@@ -26,17 +34,28 @@ paths:
               type: object
               properties:
                 name:
+                  description: Name of the APM agent key.
                   type: string
+                  example: my-new-apm-key
                 privileges:
+                  description: |
+                    APM agent key privileges. It can take one or more of the following values:
+
+                    * `event:write`: Required for ingesting APM agent events.
+                    * `config_agent:read`: Required for APM agents to read agent configuration remotely.
                   type: array
                   items:
                     type: string
                     enum:
                       - event:write
                       - config_agent:read
+                  example: ["event:write", "config_agent:read"]
+              required:
+                - name
+                - privileges
       responses:
         "200":
-          description: Agent key created successfully
+          description: Agent key created successfully.
           content:
             application/json:
               schema:
@@ -44,15 +63,19 @@ paths:
                 properties:
                   api_key:
                     type: string
+                    example: PjGloCGOTzaZr8ilUPvkjA
                   expiration:
                     type: integer
                     format: int64
                   id:
                     type: string
+                    example: 3DCLmn0B3ZMhLUa7WBG9
                   name:
                     type: string
+                    example: my-new-apm-key
                   encoded:
                     type: string
+                    example: M0RDTG1uMEIzWk1oTFVhN1dCRzk6UGpHbG9DR09UemFacjhpbFVQdmtqQQ
   /api/apm/services/{serviceName}/annotation/search:
     get:
       summary: Search for annotations
