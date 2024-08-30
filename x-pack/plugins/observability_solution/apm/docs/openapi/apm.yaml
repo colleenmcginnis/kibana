@@ -14,6 +14,9 @@ tags:
     description: >
       Annotate visualizations in the APM app with significant events.
       Annotations enable you to easily see how events are impacting the performance of your applications.
+    externalDocs:
+      description: APM annotations documentation
+      url: https://www.elastic.co/guide/en/observability/current/apm-transactions-annotations.html
 paths:
   /api/apm/agent_keys:
     post:
@@ -76,6 +79,132 @@ paths:
                   encoded:
                     type: string
                     example: M0RDTG1uMEIzWk1oTFVhN1dCRzk6UGpHbG9DR09UemFacjhpbFVQdmtqQQ
+  /api/apm/services/{serviceName}/annotation:
+    post:
+      summary: Create or update annotation
+      description: |
+        Create a new annotation for a specific service.
+
+        By default, annotations are stored in a newly created `observability-annotations` index.
+        The name of this index can be changed in your `config.yml` by editing `xpack.observability.annotations.index`.
+        If you change the default index name, you’ll also need to update your [user privileges](https://www.elastic.co/guide/en/observability/current/apm-app-annotation-user-create.html) accordingly.
+      operationId: createAnnotation
+      tags:
+        - APM annotations
+      parameters:
+        - name: serviceName
+          in: path
+          required: true
+          description: The name of the service.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                service:
+                  type: object
+                  description: Service identifying the configuration to create or update.
+                  properties:
+                    version:
+                      type: string
+                      description: Version of service.
+                      example: '1.2'
+                    environment:
+                      type: string
+                      description: Environment of service.
+                  required:
+                  - version
+                '@timestamp':
+                  type: string
+                  description: |
+                    The date and time of the annotation.
+                    Must be in [ISO 8601](https://www.w3.org/TR/NOTE-datetime) format.
+                  example: '2024-07-21T10:31:30.452Z'
+                message:
+                  type: string
+                  description: The message displayed in the annotation.
+                  example: Deployment 1.2
+                  default: service.version
+                tags:
+                  type: array
+                  description: |
+                    Distinguish APM annotations from other annotations.
+                    Defaults to `[apm]`, and while you can add additional tags, you cannot remove the `apm` tag.
+                  items:
+                    type: string
+                  default: ['apm']
+                  example: ['apm', 'my-tag']
+              required:
+              - '@timestamp'
+              - service
+      responses:
+        '200':
+          description: Annotation created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _index:
+                    type: string
+                    example: observability-annotations
+                  _id:
+                    type: string
+                    example: Lc9I93EBh6DbmkeV7nFX
+                  _version:
+                    type: integer
+                    example: 1
+                  _seq_no:
+                    type: integer
+                    example: 0
+                  _primary_term:
+                    type: integer
+                    example: 1
+                  found:
+                    type: boolean
+                    example: true
+                  _source:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Deployment 1.2
+                      '@timestamp':
+                        type: string
+                        example: '2024-07-21T10:31:30.452Z'
+                      service:
+                        type: object
+                        properties:
+                          version:
+                            type: string
+                            example: '1.2'
+                          name:
+                            type: string
+                            example: my-node-service
+                          environment:
+                            type: string
+                      annotation:
+                        type: object
+                        properties:
+                          type:
+                            type: string
+                            example: deployment
+                      tags:
+                        type: array
+                        items:
+                          type: string
+                        example: ["apm", "elastic.co", "customer"]
+                      event:
+                        type: object
+                        properties:
+                          created:
+                            type: string
+                            example: '2024-08-30T15:46:43.259Z'
+
   /api/apm/services/{serviceName}/annotation/search:
     get:
       summary: Search for annotations
@@ -87,19 +216,19 @@ paths:
         - name: serviceName
           in: path
           required: true
-          description: The name of the service
+          description: The name of the service.
           schema:
             type: string
         - name: environment
           in: query
           required: false
-          description: The environment to filter annotations by
+          description: The environment to filter annotations by.
           schema:
             type: string
         - name: start
           in: query
           required: false
-          description: The start date for the search
+          description: The start date for the search.
           schema:
             type: string
         - name: end
@@ -129,81 +258,8 @@ paths:
                           type: string
                         "@timestamp":
                           type: number
+                          example: 1721557890452
                         text:
                           type: string
-  /api/apm/services/{serviceName}/annotation:
-    post:
-      summary: Create a service annotation
-      description: Create a new annotation for a specific service.
-      operationId: createAnnotation
-      tags:
-        - APM annotations
-      parameters:
-        - name: serviceName
-          in: path
-          required: true
-          description: The name of the service
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                '@timestamp':
-                  type: string
-                service:
-                  type: object
-                  properties:
-                    version:
-                      type: string
-                    environment:
-                      type: string
-                message:
-                  type: string
-                tags:
-                  type: array
-                  items:
-                    type: string
+                          example: Deployment 1.2
 
-      responses:
-        '200':
-          description: Annotation created successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  _id:
-                    type: string
-                  _index:
-                    type: string
-                  _source:
-                    type: object
-                    properties:
-                      annotation:
-                        type: string
-                      tags:
-                        type: array
-                        items:
-                          type: string
-                      message:
-                        type: string
-                      service:
-                        type: object
-                        properties:
-                          name:
-                            type: string
-                          environment:
-                            type: string
-                          version:
-                            type: string
-                      event:
-                        type: object
-                        properties:
-                          created:
-                            type: string
-                      '@timestamp':
-                        type: string
