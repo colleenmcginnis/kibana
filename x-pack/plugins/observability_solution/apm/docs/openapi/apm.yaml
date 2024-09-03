@@ -4,6 +4,12 @@ info:
   version: 1.0.0
   description: Kibana APIs for working with the APM UI.
 tags:
+  - name: APM agent configuration
+    description: >
+      Fine tune your APM agent configuration without redeploying your application.
+    externalDocs:
+      description: APM agent API key documentation
+      url: https://www.elastic.co/guide/en/observability/current/apm-api-key.html
   - name: APM agent keys
     description: >
       Configure APM agent keys to authorize requests from APM agents to the APM Server.
@@ -17,7 +23,7 @@ tags:
     externalDocs:
       description: APM annotations documentation
       url: https://www.elastic.co/guide/en/observability/current/apm-transactions-annotations.html
-  - name: APM RUM source maps
+  - name: APM source maps
     description: >
       Upload source maps to map minified files back to original source code.
       Source maps allow you to maintain the speed advantage of minified code without losing the ability to debug your application.
@@ -274,7 +280,7 @@ paths:
       summary: Create or update source maps
       operationId: createSourcemap
       tags:
-        - APM RUM source maps
+        - APM source maps
       description: |
         Create or update a source map for a specific service and version.
 
@@ -370,7 +376,7 @@ paths:
       summary: Get source maps
       operationId: getSourcemap
       tags:
-        - APM RUM source maps
+        - APM source maps
       description: |
         Returns an array of Fleet artifacts, including source map uploads.
 
@@ -472,7 +478,7 @@ paths:
       summary: Delete source maps
       operationId: deleteSourcemap
       tags:
-        - APM RUM source maps
+        - APM source maps
       description: |
         Delete a previously uploaded source map.
 
@@ -492,3 +498,226 @@ paths:
             application/json:
               schema:
                 type: object
+  /api/apm/settings/agent-configuration:
+    put:
+      summary: Create or update configuration
+      description: Create or update an APM agent configuration.
+      operationId: createApmAgentConfig
+      tags:
+        - APM agent configuration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                service:
+                  type: object
+                  description: Service identifying the configuration to create or update.
+                  properties:
+                    name:
+                      type: string
+                      description: Name of service.
+                      example: frontend
+                    environment:
+                      type: string
+                      description: Environment of service.
+                      example: production
+                  required:
+                    - name
+                settings:
+                  type: object
+                  description: Key/value object with option name and option value.
+                  example:
+                    transaction_sample_rate: '0.4'
+                    capture_body: 'off'
+                    transaction_max_spans: '500'
+                agent_name:
+                  type: string
+                  description: The agent name is used by the UI to determine which settings to display.
+                  example: nodejs
+              required:
+                - service
+                - settings
+      responses:
+        '200':
+          description: Configuration successfully created.
+          content:
+            application/json:
+              schema:
+                type: object
+    delete:
+      summary: Delete an agent configuration
+      description: |
+        Delete an APM agent configuration.
+      operationId: deleteApmAgentConfig
+      tags:
+        - APM agent configuration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                service:
+                  type: object
+                  description: Service identifying the configuration to delete.
+                  properties:
+                    name:
+                      type: string
+                      description: Name of service.
+                      example: frontend
+                    environment:
+                      type: string
+                      description: Environment of service.
+                      example: production
+                  required:
+                    - name
+              required:
+                - service
+      responses:
+        '200':
+          description: Configuration successfully deleted.
+          content:
+            application/json:
+              schema:
+                type: object
+    get:
+      summary: Get configurations
+      description: |
+        List all APM agent configurations.
+      operationId: listApmAgentConfig
+      tags:
+        - APM agent configuration
+      responses:
+        '200':
+          description: Configuration successfully created.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    agent_name:
+                      type: string
+                    service:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        environment:
+                          type: string
+                    settings:
+                      type: object
+                    "@timestamp":
+                      type: number
+                    applied_by_agent:
+                      type: boolean
+                    etag:
+                      type: string
+              examples:
+                basic:
+                  summary: Response returning two configurations.
+                  value:
+                    items:
+                      - agent_name: go
+                        service:
+                            name: opbeans-go
+                            environment: production
+                        settings:
+                            transaction_sample_rate: "1"
+                            capture_body: off
+                            transaction_max_spans: "200"
+                        "@timestamp": 1581934104843
+                        applied_by_agent: false
+                        etag: 1e58c178efeebae15c25c539da740d21dee422fc
+                      - agent_name: nodejs
+                        service:
+                          name: frontend
+                        settings:
+                          transaction_sample_rate: "1"
+                        "@timestamp": 1582031336265
+                        applied_by_agent: false
+                        etag: 5080ed25785b7b19f32713681e79f46996801a5b
+  /api/apm/settings/agent-configuration/search:
+    post:
+      summary: Search for configurations
+      description: Search for APM agent configurations.
+      operationId: searchApmAgentConfig
+      tags:
+        - APM agent configuration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                service:
+                  type: object
+                  description: Service identifying the configuration to search.
+                  properties:
+                    name:
+                      type: string
+                      description: Name of service.
+                      example: frontend
+                    environment:
+                      type: string
+                      description: Environment of service.
+                      example: production
+                  required:
+                    - name
+                etag:
+                  type: string
+                  description: etag is sent by the APM agent to indicate the etag of the last successfully applied configuration. If the etag matches an existing configuration its `applied_by_agent` property will be set to `true`. Every time a configuration is edited `applied_by_agent` is reset to `false`.
+                  example: 1e58c178efeebae15c25c539da740d21dee422fc
+              required:
+                - service
+                - etag
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _index:
+                    type: string
+                    example: .apm-agent-configuration
+                  _id:
+                    type: string
+                    example: CIaqXXABmQCdPphWj8EJ
+                  _score:
+                    type: number
+                    example: 2
+                  _source:
+                    type: object
+                    properties:
+                      agent_name:
+                        type: string
+                        example: nodejs
+                      service:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                            example: frontend
+                      settings:
+                        type: object
+                        example:
+                          transaction_sample_rate: "1"
+                      "@timestamp":
+                        type: number
+                        example: 1582031336265
+                      applied_by_agent:
+                        type: boolean
+                        example: false
+                      etag:
+                        type: string
+                        example: 5080ed25785b7b19f32713681e79f46996801a5b
+
+
