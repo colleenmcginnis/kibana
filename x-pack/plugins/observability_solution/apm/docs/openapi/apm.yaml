@@ -3,32 +3,35 @@ info:
   title: APM UI
   version: 1.0.0
   description: Kibana APIs for working with the APM UI.
+  license:
+    name: Elastic License 2.0
+    url: https://www.elastic.co/licensing/elastic-license
 tags:
   - name: APM agent configuration
     description: >
       Fine tune your APM agent configuration without redeploying your application.
     externalDocs:
-      description: APM agent API key documentation
-      url: https://www.elastic.co/guide/en/observability/current/apm-api-key.html
+      description: APM agent central config docs
+      url: https://www.elastic.co/guide/en/observability/current/apm-agent-configuration.html#_supported_configurations
   - name: APM agent keys
     description: >
       Configure APM agent keys to authorize requests from APM agents to the APM Server.
     externalDocs:
-      description: APM agent API key documentation
+      description: APM agent API key docs
       url: https://www.elastic.co/guide/en/observability/current/apm-api-key.html
   - name: APM annotations
     description: >
-      Annotate visualizations in the APM app with significant events.
+      Annotate visualizations in the APM UI with significant events.
       Annotations enable you to easily see how events are impacting the performance of your applications.
     externalDocs:
-      description: APM annotations documentation
+      description: APM annotations docs
       url: https://www.elastic.co/guide/en/observability/current/apm-transactions-annotations.html
   - name: APM source maps
     description: >
       Upload source maps to map minified files back to original source code.
       Source maps allow you to maintain the speed advantage of minified code without losing the ability to debug your application.
     externalDocs:
-        description: APM source map documentation
+        description: APM source map docs
         url: https://www.elastic.co/guide/en/observability/current/apm-source-map-how-to.html
 paths:
   /api/apm/agent_keys:
@@ -38,7 +41,7 @@ paths:
         Create an APM agent API key.
         Specify API key privileges in the request body at creation time.
 
-        You must have at least the `manage_own_api_key` cluster privilege and the APM application-level privileges that it wishes to grant. For more information refer to [Grant privileges and roles needed for API key management](https://www.elastic.co/guide/en/observability/current/apm-privileges-api-key.html).
+        You must have at least the `manage_own_api_key` cluster privilege and the APM application-level privileges that it wishes to grant.
       operationId: createAgentKey
       tags:
         - APM agent keys
@@ -50,7 +53,7 @@ paths:
               type: object
               properties:
                 name:
-                  description: Name of the APM agent key.
+                  description: The name of the APM agent key.
                   type: string
                   example: my-new-apm-key
                 privileges:
@@ -71,7 +74,7 @@ paths:
                 - privileges
       responses:
         "200":
-          description: Agent key created successfully.
+          description: The agent key was created successfully.
           content:
             application/json:
               schema:
@@ -94,7 +97,7 @@ paths:
                     example: M0RDTG1uMEIzWk1oTFVhN1dCRzk6UGpHbG9DR09UemFacjhpbFVQdmtqQQ
   /api/apm/services/{serviceName}/annotation:
     post:
-      summary: Create or update annotation
+      summary: Create or update an annotation
       description: |
         Create a new annotation for a specific service.
 
@@ -129,6 +132,7 @@ paths:
                     environment:
                       type: string
                       description: Environment of service.
+                      example: 'production'
                   required:
                   - version
                 '@timestamp':
@@ -146,7 +150,7 @@ paths:
                   type: array
                   description: |
                     Distinguish APM annotations from other annotations.
-                    Defaults to `[apm]`, and while you can add additional tags, you cannot remove the `apm` tag.
+                    Defaults to `["apm"]`, and while you can add additional tags, you cannot remove the `apm` tag.
                   items:
                     type: string
                   default: ['apm']
@@ -247,7 +251,7 @@ paths:
         - name: end
           in: query
           required: false
-          description: The end date for the search
+          description: The end date for the search.
           schema:
             type: string
       responses:
@@ -277,14 +281,14 @@ paths:
                           example: Deployment 1.2
   /api/apm/sourcemaps:
     post:
-      summary: Create or update source maps
+      summary: Create or update a source map
       operationId: createSourcemap
       tags:
         - APM source maps
       description: |
         Create or update a source map for a specific service and version.
 
-        You must have `All` Kibana privileges for the APM and User Experience feature. For more information, see [Kibana privileges](https://www.elastic.co/guide/en/kibana/current/kibana-privileges.html).
+        You must have `All` Kibana privileges for the APM and User Experience feature. For more information, refer to [Kibana privileges](https://www.elastic.co/guide/en/kibana/current/kibana-privileges.html).
       requestBody:
         content:
           application/json; Elastic-Api-Version=2023-10-31:
@@ -292,10 +296,10 @@ paths:
               type: object
               properties:
                 service_name:
-                  description: The name of the service that the service map should apply to.
+                  description: The name of the service that the source map should apply to.
                   type: string
                 service_version:
-                  description: The version of the service that the service map should apply to.
+                  description: The version of the service that the source map should apply to.
                   type: string
                 bundle_filepath:
                   description: The absolute path of the final bundle as used in the web application.
@@ -381,7 +385,7 @@ paths:
         Returns an array of Fleet artifacts, including source map uploads.
 
         You must have `Read` or `All` Kibana privileges for the APM and User Experience feature.
-        For more information, see [Kibana privileges](https://www.elastic.co/guide/en/kibana/current/kibana-privileges.html).
+        For more information, refer to [Kibana privileges](https://www.elastic.co/guide/en/kibana/current/kibana-privileges.html).
       responses:
         '200':
           description: Source map successfully retrieved.
@@ -475,7 +479,7 @@ paths:
                           example: apm
   /api/apm/sourcemaps/{id}:
     delete:
-      summary: Delete source maps
+      summary: Delete a source map
       operationId: deleteSourcemap
       tags:
         - APM source maps
@@ -483,7 +487,7 @@ paths:
         Delete a previously uploaded source map.
 
         You must have `All` Kibana privileges for the APM and User Experience feature.
-        For more information, see [Kibana privileges](https://www.elastic.co/guide/en/kibana/current/kibana-privileges.html).
+        For more information, refer to [Kibana privileges](https://www.elastic.co/guide/en/kibana/current/kibana-privileges.html).
       parameters:
         - name: id
           in: path
@@ -500,7 +504,7 @@ paths:
                 type: object
   /api/apm/settings/agent-configuration:
     put:
-      summary: Create or update configuration
+      summary: Create or update a configuration
       description: Create or update an APM agent configuration.
       operationId: createApmAgentConfig
       tags:
@@ -514,28 +518,31 @@ paths:
               properties:
                 service:
                   type: object
-                  description: Service identifying the configuration to create or update.
+                  description: The service identifying the configuration to create or update.
                   properties:
                     name:
                       type: string
-                      description: Name of service.
+                      description: The name of the service.
                       example: frontend
                     environment:
                       type: string
-                      description: Environment of service.
+                      description: The environment of the service.
                       example: production
                   required:
                     - name
                 settings:
                   type: object
-                  description: Key/value object with option name and option value.
+                  description: >
+                    A key/value object with option name and option value.
+                    Each APM agent has a list of supported configurations.
+                    For more information, refer to the [APM agent documentation](https://www.elastic.co/guide/en/observability/current/apm-agent-configuration.html#_supported_configurations).
                   example:
                     transaction_sample_rate: '0.4'
                     capture_body: 'off'
                     transaction_max_spans: '500'
                 agent_name:
                   type: string
-                  description: The agent name is used by the UI to determine which settings to display.
+                  description: The agent name. This is used by the UI to determine which settings to display.
                   example: nodejs
               required:
                 - service
@@ -548,7 +555,7 @@ paths:
               schema:
                 type: object
     delete:
-      summary: Delete an agent configuration
+      summary: Delete a configuration
       description: |
         Delete an APM agent configuration.
       operationId: deleteApmAgentConfig
@@ -644,8 +651,8 @@ paths:
                         etag: 5080ed25785b7b19f32713681e79f46996801a5b
   /api/apm/settings/agent-configuration/search:
     post:
-      summary: Search for configurations
-      description: Search for APM agent configurations.
+      summary: Search for a configuration
+      description: Search for an APM agent configuration.
       operationId: searchApmAgentConfig
       tags:
         - APM agent configuration
@@ -658,15 +665,15 @@ paths:
               properties:
                 service:
                   type: object
-                  description: Service identifying the configuration to search.
+                  description: The service identifying the configuration to search.
                   properties:
                     name:
                       type: string
-                      description: Name of service.
+                      description: The name of the service.
                       example: frontend
                     environment:
                       type: string
-                      description: Environment of service.
+                      description: The environment of the service.
                       example: production
                   required:
                     - name
