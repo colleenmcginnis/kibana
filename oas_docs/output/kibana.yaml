@@ -6408,7 +6408,14 @@ paths:
         - alerting
   /api/apm/agent_keys:
     post:
-      description: Create a new agent key for APM.
+      description: >
+        Create an APM agent API key.
+
+        Specify API key privileges in the request body at creation time.
+
+
+        You must have at least the `manage_own_api_key` cluster privilege and
+        the APM application-level privileges that it wishes to grant.
       operationId: createAgentKey
       requestBody:
         content:
@@ -6417,14 +6424,31 @@ paths:
               type: object
               properties:
                 name:
+                  description: The name of the APM agent key.
+                  example: my-new-apm-key
                   type: string
                 privileges:
+                  description: >
+                    APM agent key privileges. It can take one or more of the
+                    following values:
+
+
+                    * `event:write`: Required for ingesting APM agent events.
+
+                    * `config_agent:read`: Required for APM agents to read agent
+                    configuration remotely.
+                  example:
+                    - event:write
+                    - config_agent:read
                   items:
                     enum:
                       - event:write
                       - config_agent:read
                     type: string
                   type: array
+              required:
+                - name
+                - privileges
         required: true
       responses:
         '200':
@@ -6434,26 +6458,42 @@ paths:
                 type: object
                 properties:
                   api_key:
+                    example: PjGloCGOTzaZr8ilUPvkjA
                     type: string
                   encoded:
+                    example: M0RDTG1uMEIzWk1oTFVhN1dCRzk6UGpHbG9DR09UemFacjhpbFVQdmtqQQ
                     type: string
                   expiration:
                     format: int64
                     type: integer
                   id:
+                    example: 3DCLmn0B3ZMhLUa7WBG9
                     type: string
                   name:
+                    example: my-new-apm-key
                     type: string
-          description: Agent key created successfully
+          description: The agent key was created successfully.
       summary: Create an APM agent key
       tags:
         - APM agent keys
   /api/apm/services/{serviceName}/annotation:
     post:
-      description: Create a new annotation for a specific service.
+      description: >
+        Create a new annotation for a specific service.
+
+        By default, annotations are stored in a newly created
+        `observability-annotations` index.
+
+        The name of this index can be changed in your `config.yml` by editing
+        `xpack.observability.annotations.index`.
+
+        If you change the default index name, you’ll also need to update your
+        [user
+        privileges](https://www.elastic.co/guide/en/observability/current/apm-app-annotation-user-create.html)
+        accordingly.
       operationId: createAnnotation
       parameters:
-        - description: The name of the service
+        - description: The name of the service.
           in: path
           name: serviceName
           required: true
@@ -6466,20 +6506,49 @@ paths:
               type: object
               properties:
                 '@timestamp':
+                  description: >
+                    The date and time of the annotation.
+
+                    Must be in [ISO 8601](https://www.w3.org/TR/NOTE-datetime)
+                    format.
+                  example: '2024-07-21T10:31:30.452Z'
                   type: string
                 message:
+                  default: service.version
+                  description: The message displayed in the annotation.
+                  example: Deployment 1.2
                   type: string
                 service:
+                  description: Service identifying the configuration to create or update.
                   type: object
                   properties:
                     environment:
+                      description: Environment of service.
+                      example: production
                       type: string
                     version:
+                      description: Version of service.
+                      example: '1.2'
                       type: string
+                  required:
+                    - version
                 tags:
+                  default:
+                    - apm
+                  description: >
+                    Distinguish APM annotations from other annotations.
+
+                    Defaults to `["apm"]`, and while you can add additional
+                    tags, you cannot remove the `apm` tag.
+                  example:
+                    - apm
+                    - my-tag
                   items:
                     type: string
                   type: array
+              required:
+                - '@timestamp'
+                - service
         required: true
       responses:
         '200':
@@ -6489,22 +6558,37 @@ paths:
                 type: object
                 properties:
                   _id:
+                    example: Lc9I93EBh6DbmkeV7nFX
                     type: string
                   _index:
+                    example: observability-annotations
                     type: string
+                  _primary_term:
+                    example: 1
+                    type: integer
+                  _seq_no:
+                    example: 0
+                    type: integer
                   _source:
                     type: object
                     properties:
                       '@timestamp':
+                        example: '2024-07-21T10:31:30.452Z'
                         type: string
                       annotation:
-                        type: string
+                        type: object
+                        properties:
+                          type:
+                            example: deployment
+                            type: string
                       event:
                         type: object
                         properties:
                           created:
+                            example: '2024-08-30T15:46:43.259Z'
                             type: string
                       message:
+                        example: Deployment 1.2
                         type: string
                       service:
                         type: object
@@ -6512,15 +6596,27 @@ paths:
                           environment:
                             type: string
                           name:
+                            example: my-node-service
                             type: string
                           version:
+                            example: '1.2'
                             type: string
                       tags:
+                        example:
+                          - apm
+                          - elastic.co
+                          - customer
                         items:
                           type: string
                         type: array
+                  _version:
+                    example: 1
+                    type: integer
+                  found:
+                    example: true
+                    type: boolean
           description: Annotation created successfully
-      summary: Create a service annotation
+      summary: Create or update an annotation
       tags:
         - APM annotations
   /api/apm/services/{serviceName}/annotation/search:
@@ -6528,25 +6624,25 @@ paths:
       description: Search for annotations related to a specific service.
       operationId: getAnnotation
       parameters:
-        - description: The name of the service
+        - description: The name of the service.
           in: path
           name: serviceName
           required: true
           schema:
             type: string
-        - description: The environment to filter annotations by
+        - description: The environment to filter annotations by.
           in: query
           name: environment
           required: false
           schema:
             type: string
-        - description: The start date for the search
+        - description: The start date for the search.
           in: query
           name: start
           required: false
           schema:
             type: string
-        - description: The end date for the search
+        - description: The end date for the search.
           in: query
           name: end
           required: false
@@ -6564,10 +6660,12 @@ paths:
                       type: object
                       properties:
                         '@timestamp':
+                          example: 1721557890452
                           type: number
                         id:
                           type: string
                         text:
+                          example: Deployment 1.2
                           type: string
                         type:
                           enum:
@@ -6578,6 +6676,491 @@ paths:
       summary: Search for annotations
       tags:
         - APM annotations
+  /api/apm/settings/agent-configuration:
+    delete:
+      description: |
+        Delete an APM agent configuration.
+      operationId: deleteApmAgentConfig
+      requestBody:
+        content:
+          application/json; Elastic-Api-Version=2023-10-31:
+            schema:
+              type: object
+              properties:
+                service:
+                  description: Service identifying the configuration to delete.
+                  type: object
+                  properties:
+                    environment:
+                      description: Environment of service.
+                      example: production
+                      type: string
+                    name:
+                      description: Name of service.
+                      example: frontend
+                      type: string
+                  required:
+                    - name
+              required:
+                - service
+        required: true
+      responses:
+        '200':
+          content:
+            application/json; Elastic-Api-Version=2023-10-31:
+              schema:
+                type: object
+          description: Configuration successfully deleted.
+      summary: Delete a configuration
+      tags:
+        - APM agent configuration
+    get:
+      description: |
+        List all APM agent configurations.
+      operationId: listApmAgentConfig
+      responses:
+        '200':
+          content:
+            application/json; Elastic-Api-Version=2023-10-31:
+              examples:
+                basic:
+                  summary: Response returning two configurations.
+                  value:
+                    items:
+                      - '@timestamp': 1581934104843
+                        agent_name: go
+                        applied_by_agent: false
+                        etag: 1e58c178efeebae15c25c539da740d21dee422fc
+                        service:
+                          environment: production
+                          name: opbeans-go
+                        settings:
+                          capture_body: 'off'
+                          transaction_max_spans: '200'
+                          transaction_sample_rate: '1'
+                      - '@timestamp': 1582031336265
+                        agent_name: nodejs
+                        applied_by_agent: false
+                        etag: 5080ed25785b7b19f32713681e79f46996801a5b
+                        service:
+                          name: frontend
+                        settings:
+                          transaction_sample_rate: '1'
+              schema:
+                items:
+                  type: object
+                  properties:
+                    '@timestamp':
+                      type: number
+                    agent_name:
+                      type: string
+                    applied_by_agent:
+                      type: boolean
+                    etag:
+                      type: string
+                    service:
+                      type: object
+                      properties:
+                        environment:
+                          type: string
+                        name:
+                          type: string
+                    settings:
+                      type: object
+                type: array
+          description: Configuration successfully created.
+      summary: Get configurations
+      tags:
+        - APM agent configuration
+    put:
+      description: Create or update an APM agent configuration.
+      operationId: createApmAgentConfig
+      requestBody:
+        content:
+          application/json; Elastic-Api-Version=2023-10-31:
+            schema:
+              type: object
+              properties:
+                agent_name:
+                  description: >-
+                    The agent name. This is used by the UI to determine which
+                    settings to display.
+                  example: nodejs
+                  type: string
+                service:
+                  description: >-
+                    The service identifying the configuration to create or
+                    update.
+                  type: object
+                  properties:
+                    environment:
+                      description: The environment of the service.
+                      example: production
+                      type: string
+                    name:
+                      description: The name of the service.
+                      example: frontend
+                      type: string
+                  required:
+                    - name
+                settings:
+                  description: >
+                    A key/value object with option name and option value. Each
+                    APM agent has a list of supported configurations. For more
+                    information, refer to the [APM agent
+                    documentation](https://www.elastic.co/guide/en/observability/current/apm-agent-configuration.html#_supported_configurations).
+                  example:
+                    capture_body: 'off'
+                    transaction_max_spans: '500'
+                    transaction_sample_rate: '0.4'
+                  type: object
+              required:
+                - service
+                - settings
+        required: true
+      responses:
+        '200':
+          content:
+            application/json; Elastic-Api-Version=2023-10-31:
+              schema:
+                type: object
+          description: Configuration successfully created.
+      summary: Create or update a configuration
+      tags:
+        - APM agent configuration
+  /api/apm/settings/agent-configuration/search:
+    post:
+      description: Search for an APM agent configuration.
+      operationId: searchApmAgentConfig
+      requestBody:
+        content:
+          application/json; Elastic-Api-Version=2023-10-31:
+            schema:
+              type: object
+              properties:
+                etag:
+                  description: >-
+                    etag is sent by the APM agent to indicate the etag of the
+                    last successfully applied configuration. If the etag matches
+                    an existing configuration its `applied_by_agent` property
+                    will be set to `true`. Every time a configuration is edited
+                    `applied_by_agent` is reset to `false`.
+                  example: 1e58c178efeebae15c25c539da740d21dee422fc
+                  type: string
+                service:
+                  description: The service identifying the configuration to search.
+                  type: object
+                  properties:
+                    environment:
+                      description: The environment of the service.
+                      example: production
+                      type: string
+                    name:
+                      description: The name of the service.
+                      example: frontend
+                      type: string
+                  required:
+                    - name
+              required:
+                - service
+                - etag
+        required: true
+      responses:
+        '200':
+          content:
+            application/json; Elastic-Api-Version=2023-10-31:
+              schema:
+                type: object
+                properties:
+                  _id:
+                    example: CIaqXXABmQCdPphWj8EJ
+                    type: string
+                  _index:
+                    example: .apm-agent-configuration
+                    type: string
+                  _score:
+                    example: 2
+                    type: number
+                  _source:
+                    type: object
+                    properties:
+                      '@timestamp':
+                        example: 1582031336265
+                        type: number
+                      agent_name:
+                        example: nodejs
+                        type: string
+                      applied_by_agent:
+                        example: false
+                        type: boolean
+                      etag:
+                        example: 5080ed25785b7b19f32713681e79f46996801a5b
+                        type: string
+                      service:
+                        type: object
+                        properties:
+                          name:
+                            example: frontend
+                            type: string
+                      settings:
+                        example:
+                          transaction_sample_rate: '1'
+                        type: object
+          description: Successful response
+      summary: Search for a configuration
+      tags:
+        - APM agent configuration
+  /api/apm/sourcemaps:
+    get:
+      description: >
+        Returns an array of Fleet artifacts, including source map uploads.
+
+
+        You must have `Read` or `All` Kibana privileges for the APM and User
+        Experience feature.
+
+        For more information, refer to [Kibana
+        privileges](https://www.elastic.co/guide/en/kibana/current/kibana-privileges.html).
+      operationId: getSourcemap
+      responses:
+        '200':
+          content:
+            application/json; Elastic-Api-Version=2023-10-31:
+              schema:
+                type: object
+                properties:
+                  artifacts:
+                    items:
+                      type: object
+                      properties:
+                        body:
+                          type: object
+                          properties:
+                            bundleFilepath:
+                              example: /test/e2e/general-usecase/bundle.js
+                              type: string
+                            serviceName:
+                              example: foo
+                              type: string
+                            serviceVersion:
+                              example: 1.0.0
+                              type: string
+                            sourceMap:
+                              type: object
+                              properties:
+                                file:
+                                  example: static/js/main.chunk.js
+                                  type: string
+                                mappings:
+                                  example: mapping
+                                  type: string
+                                sourceRoot:
+                                  type: string
+                                sources:
+                                  example:
+                                    - fleet-source-map-client/src/index.css
+                                    - fleet-source-map-client/src/App.js
+                                    - webpack:#/./src/index.css?bb0a
+                                    - fleet-source-map-client/src/index.js
+                                    - >-
+                                      fleet-source-map-client/src/reportWebVitals.js
+                                  items:
+                                    type: string
+                                  type: array
+                                sourcesContent:
+                                  example:
+                                    - content
+                                  items:
+                                    type: string
+                                  type: array
+                                version:
+                                  example: 3
+                                  type: integer
+                        compressionAlgorithm:
+                          example: zlib
+                          type: string
+                        created:
+                          example: '2021-07-09T20:47:44.812Z'
+                          type: string
+                        decodedSha256:
+                          example: >-
+                            644fd5a997d1ddd90ee131ba18e2b3d03931d89dd1fe4599143c0b3264b3e456
+                          type: string
+                        decodedSize:
+                          example: 441
+                          type: number
+                        encodedSha256:
+                          example: >-
+                            024c72749c3e3dd411b103f7040ae62633558608f480bce4b108cf5b2275bd24
+                          type: string
+                        encodedSize:
+                          example: 237
+                          type: number
+                        encryptionAlgorithm:
+                          example: none
+                          type: string
+                        id:
+                          example: >-
+                            apm:foo-1.0.0-644fd5a997d1ddd90ee131ba18e2b3d03931d89dd1fe4599143c0b3264b3e456
+                          type: string
+                        identifier:
+                          example: foo-1.0.0
+                          type: string
+                        packageName:
+                          example: apm
+                          type: string
+                        relative_url:
+                          example: >-
+                            /api/fleet/artifacts/foo-1.0.0/644fd5a997d1ddd90ee131ba18e2b3d03931d89dd1fe4599143c0b3264b3e456
+                          type: string
+                        type:
+                          example: sourcemap
+                          type: string
+                    type: array
+          description: Source map successfully retrieved.
+      summary: Get source maps
+      tags:
+        - APM source maps
+    post:
+      description: >
+        Create or update a source map for a specific service and version.
+
+
+        You must have `All` Kibana privileges for the APM and User Experience
+        feature. For more information, refer to [Kibana
+        privileges](https://www.elastic.co/guide/en/kibana/current/kibana-privileges.html).
+      operationId: createSourcemap
+      requestBody:
+        content:
+          application/json; Elastic-Api-Version=2023-10-31:
+            examples:
+              file:
+                summary: Upload a source map as a file.
+                value:
+                  bundle_filepath: /test/e2e/general-usecase/bundle.js
+                  service_name: foo
+                  service_version: 1.0.0
+                  sourcemap: '@path/to/source_map/bundle.js.map'
+              inline:
+                summary: Include the source map contents inline.
+                value:
+                  bundle_filepath: /test/e2e/general-usecase/bundle.js
+                  service_name: foo
+                  service_version: 1.0.0
+                  sourcemap: >-
+                    {\"version\":3,\"file\":\"static/js/main.chunk.js\",\"sources\":[\"fleet-source-map-client/src/index.css\",\"fleet-source-map-client/src/App.js\",\"webpack:///./src/index.css?bb0a\",\"fleet-source-map-client/src/index.js\",\"fleet-source-map-client/src/reportWebVitals.js\"],\"sourcesContent\":[\"content\"],\"mappings\":\"mapping\",\"sourceRoot\":\"\"}
+                  value: null
+            schema:
+              type: object
+              properties:
+                bundle_filepath:
+                  description: >-
+                    The absolute path of the final bundle as used in the web
+                    application.
+                  type: string
+                service_name:
+                  description: The name of the service that the source map should apply to.
+                  type: string
+                service_version:
+                  description: >-
+                    The version of the service that the source map should apply
+                    to.
+                  type: string
+                sourcemap:
+                  description: >-
+                    The source map. It must follow the [source map revision 3
+                    proposal](https://docs.google.com/document/d/1U1RGAehQwRypUTovF1KRlpiOFze0b-_2gc6fAH0KY0k).
+                  type: string
+              required:
+                - service_name
+                - service_version
+                - bundle_filepath
+                - sourcemap
+      responses:
+        '200':
+          content:
+            application/json; Elastic-Api-Version=2023-10-31:
+              schema:
+                type: object
+                properties:
+                  body:
+                    example: >-
+                      eJyFkL1OwzAUhd/Fc+MbYMuCEBIbHRjKgBgc96R16tiWr1OQqr47NwqJxEK3q/PzWccXxchnZ7E1A1SjuhjVZtF2yOxiEPlO17oWox3D3uPFeSRTjmJQARfCPeiAgGx8NTKsYdAc1T3rwaSJGcds8Sp3c1HnhfywUZ3QhMTFFGepZxqMC9oex3CS9tpk1XyozgOlmoVKuJX1DqEQZ0su7PGtLU+V/3JPKc3cL7TJ2FNDRPov4bFta3MDM4f7W69lpJjLO9qdK8bzVPhcJz3HUCQ4LbO/p5hCSC4cZPByrp/wFqOklbpefwAhzpqI
+                    type: string
+                  compressionAlgorithm:
+                    example: zlib
+                    type: string
+                  created:
+                    example: '2021-07-09T20:47:44.812Z'
+                    format: date-time
+                    type: string
+                  decodedSha256:
+                    example: >-
+                      644fd5a997d1ddd90ee131ba18e2b3d03931d89dd1fe4599143c0b3264b3e456
+                    type: string
+                  decodedSize:
+                    example: 441
+                    type: number
+                  encodedSha256:
+                    example: >-
+                      024c72749c3e3dd411b103f7040ae62633558608f480bce4b108cf5b2275bd24
+                    type: string
+                  encodedSize:
+                    example: 237
+                    type: number
+                  encryptionAlgorithm:
+                    example: none
+                    type: string
+                  id:
+                    example: >-
+                      apm:foo-1.0.0-644fd5a997d1ddd90ee131ba18e2b3d03931d89dd1fe4599143c0b3264b3e456
+                    type: string
+                  identifier:
+                    example: foo-1.0.0
+                    type: string
+                  packageName:
+                    example: apm
+                    type: string
+                  relative_url:
+                    example: >-
+                      /api/fleet/artifacts/foo-1.0.0/644fd5a997d1ddd90ee131ba18e2b3d03931d89dd1fe4599143c0b3264b3e456
+                    type: string
+                  type:
+                    example: sourcemap
+                    type: string
+          description: Source map successfully created.
+      summary: Create or update a source map
+      tags:
+        - APM source maps
+  /api/apm/sourcemaps/{id}:
+    delete:
+      description: >
+        Delete a previously uploaded source map.
+
+
+        You must have `All` Kibana privileges for the APM and User Experience
+        feature.
+
+        For more information, refer to [Kibana
+        privileges](https://www.elastic.co/guide/en/kibana/current/kibana-privileges.html).
+      operationId: deleteSourcemap
+      parameters:
+        - description: The id of a previously uploaded source map.
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json; Elastic-Api-Version=2023-10-31:
+              schema:
+                type: object
+          description: Source map successfully deleted.
+      summary: Delete a source map
+      tags:
+        - APM source maps
   /api/asset_criticality:
     delete:
       description: Delete the asset criticality record for a specific entity.
@@ -59742,14 +60325,38 @@ security:
 tags:
   - name: alerting
   - description: >
+      Fine tune your APM agent configuration without redeploying your
+      application.
+    externalDocs:
+      description: APM agent central config docs
+      url: >-
+        https://www.elastic.co/guide/en/observability/current/apm-agent-configuration.html#_supported_configurations
+    name: APM agent configuration
+  - description: >
       Configure APM agent keys to authorize requests from APM agents to the APM
       Server.
+    externalDocs:
+      description: APM agent API key docs
+      url: https://www.elastic.co/guide/en/observability/current/apm-api-key.html
     name: APM agent keys
   - description: >
-      Annotate visualizations in the APM app with significant events.
-      Annotations enable you to easily see how events are impacting the
-      performance of your applications.
+      Annotate visualizations in the APM UI with significant events. Annotations
+      enable you to easily see how events are impacting the performance of your
+      applications.
+    externalDocs:
+      description: APM annotations docs
+      url: >-
+        https://www.elastic.co/guide/en/observability/current/apm-transactions-annotations.html
     name: APM annotations
+  - description: >
+      Upload source maps to map minified files back to original source code.
+      Source maps allow you to maintain the speed advantage of minified code
+      without losing the ability to debug your application.
+    externalDocs:
+      description: APM source map docs
+      url: >-
+        https://www.elastic.co/guide/en/observability/current/apm-source-map-how-to.html
+    name: APM source maps
   - description: Case APIs enable you to open and track issues.
     name: cases
   - name: connectors

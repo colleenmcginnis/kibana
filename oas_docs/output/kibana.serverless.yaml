@@ -5231,7 +5231,14 @@ paths:
         - alerting
   /api/apm/agent_keys:
     post:
-      description: Create a new agent key for APM.
+      description: >
+        Create an APM agent API key.
+
+        Specify API key privileges in the request body at creation time.
+
+
+        You must have at least the `manage_own_api_key` cluster privilege and
+        the APM application-level privileges that it wishes to grant.
       operationId: createAgentKey
       requestBody:
         content:
@@ -5240,14 +5247,31 @@ paths:
               type: object
               properties:
                 name:
+                  description: The name of the APM agent key.
+                  example: my-new-apm-key
                   type: string
                 privileges:
+                  description: >
+                    APM agent key privileges. It can take one or more of the
+                    following values:
+
+
+                    * `event:write`: Required for ingesting APM agent events.
+
+                    * `config_agent:read`: Required for APM agents to read agent
+                    configuration remotely.
+                  example:
+                    - event:write
+                    - config_agent:read
                   items:
                     enum:
                       - event:write
                       - config_agent:read
                     type: string
                   type: array
+              required:
+                - name
+                - privileges
         required: true
       responses:
         '200':
@@ -5257,26 +5281,42 @@ paths:
                 type: object
                 properties:
                   api_key:
+                    example: PjGloCGOTzaZr8ilUPvkjA
                     type: string
                   encoded:
+                    example: M0RDTG1uMEIzWk1oTFVhN1dCRzk6UGpHbG9DR09UemFacjhpbFVQdmtqQQ
                     type: string
                   expiration:
                     format: int64
                     type: integer
                   id:
+                    example: 3DCLmn0B3ZMhLUa7WBG9
                     type: string
                   name:
+                    example: my-new-apm-key
                     type: string
-          description: Agent key created successfully
+          description: The agent key was created successfully.
       summary: Create an APM agent key
       tags:
         - APM agent keys
   /api/apm/services/{serviceName}/annotation:
     post:
-      description: Create a new annotation for a specific service.
+      description: >
+        Create a new annotation for a specific service.
+
+        By default, annotations are stored in a newly created
+        `observability-annotations` index.
+
+        The name of this index can be changed in your `config.yml` by editing
+        `xpack.observability.annotations.index`.
+
+        If you change the default index name, you’ll also need to update your
+        [user
+        privileges](https://www.elastic.co/guide/en/observability/current/apm-app-annotation-user-create.html)
+        accordingly.
       operationId: createAnnotation
       parameters:
-        - description: The name of the service
+        - description: The name of the service.
           in: path
           name: serviceName
           required: true
@@ -5289,20 +5329,49 @@ paths:
               type: object
               properties:
                 '@timestamp':
+                  description: >
+                    The date and time of the annotation.
+
+                    Must be in [ISO 8601](https://www.w3.org/TR/NOTE-datetime)
+                    format.
+                  example: '2024-07-21T10:31:30.452Z'
                   type: string
                 message:
+                  default: service.version
+                  description: The message displayed in the annotation.
+                  example: Deployment 1.2
                   type: string
                 service:
+                  description: Service identifying the configuration to create or update.
                   type: object
                   properties:
                     environment:
+                      description: Environment of service.
+                      example: production
                       type: string
                     version:
+                      description: Version of service.
+                      example: '1.2'
                       type: string
+                  required:
+                    - version
                 tags:
+                  default:
+                    - apm
+                  description: >
+                    Distinguish APM annotations from other annotations.
+
+                    Defaults to `["apm"]`, and while you can add additional
+                    tags, you cannot remove the `apm` tag.
+                  example:
+                    - apm
+                    - my-tag
                   items:
                     type: string
                   type: array
+              required:
+                - '@timestamp'
+                - service
         required: true
       responses:
         '200':
@@ -5312,22 +5381,37 @@ paths:
                 type: object
                 properties:
                   _id:
+                    example: Lc9I93EBh6DbmkeV7nFX
                     type: string
                   _index:
+                    example: observability-annotations
                     type: string
+                  _primary_term:
+                    example: 1
+                    type: integer
+                  _seq_no:
+                    example: 0
+                    type: integer
                   _source:
                     type: object
                     properties:
                       '@timestamp':
+                        example: '2024-07-21T10:31:30.452Z'
                         type: string
                       annotation:
-                        type: string
+                        type: object
+                        properties:
+                          type:
+                            example: deployment
+                            type: string
                       event:
                         type: object
                         properties:
                           created:
+                            example: '2024-08-30T15:46:43.259Z'
                             type: string
                       message:
+                        example: Deployment 1.2
                         type: string
                       service:
                         type: object
@@ -5335,15 +5419,27 @@ paths:
                           environment:
                             type: string
                           name:
+                            example: my-node-service
                             type: string
                           version:
+                            example: '1.2'
                             type: string
                       tags:
+                        example:
+                          - apm
+                          - elastic.co
+                          - customer
                         items:
                           type: string
                         type: array
+                  _version:
+                    example: 1
+                    type: integer
+                  found:
+                    example: true
+                    type: boolean
           description: Annotation created successfully
-      summary: Create a service annotation
+      summary: Create or update an annotation
       tags:
         - APM annotations
   /api/apm/services/{serviceName}/annotation/search:
@@ -5351,25 +5447,25 @@ paths:
       description: Search for annotations related to a specific service.
       operationId: getAnnotation
       parameters:
-        - description: The name of the service
+        - description: The name of the service.
           in: path
           name: serviceName
           required: true
           schema:
             type: string
-        - description: The environment to filter annotations by
+        - description: The environment to filter annotations by.
           in: query
           name: environment
           required: false
           schema:
             type: string
-        - description: The start date for the search
+        - description: The start date for the search.
           in: query
           name: start
           required: false
           schema:
             type: string
-        - description: The end date for the search
+        - description: The end date for the search.
           in: query
           name: end
           required: false
@@ -5387,10 +5483,12 @@ paths:
                       type: object
                       properties:
                         '@timestamp':
+                          example: 1721557890452
                           type: number
                         id:
                           type: string
                         text:
+                          example: Deployment 1.2
                           type: string
                         type:
                           enum:
@@ -51010,11 +51108,19 @@ tags:
   - description: >
       Configure APM agent keys to authorize requests from APM agents to the APM
       Server.
+    externalDocs:
+      description: APM agent API key docs
+      url: >-
+        https://www.elastic.co/docs/current/serverless/observability/apm-keep-data-secure#secure-communication-with-apm-agents
     name: APM agent keys
   - description: >
-      Annotate visualizations in the APM app with significant events.
-      Annotations enable you to easily see how events are impacting the
-      performance of your applications.
+      Annotate visualizations in the APM UI with significant events. Annotations
+      enable you to easily see how events are impacting the performance of your
+      applications.
+    externalDocs:
+      description: APM annotations docs
+      url: >-
+        https://www.elastic.co/docs/current/serverless/observability/apm-track-deployments-with-annotations
     name: APM annotations
   - name: connectors
   - name: Data streams
