@@ -1,0 +1,28 @@
+delete:
+  summary: Delete a source map
+  operationId: deleteSourcemap
+  tags:
+    - APM source maps
+  description: >
+    Delete a previously uploaded source map.
+
+
+    You must have `All` Kibana privileges for the APM and User Experience
+    feature.
+
+    For more information, refer to [Kibana
+    privileges](https://www.elastic.co/guide/en/kibana/current/kibana-privileges.html).
+  parameters:
+    - name: id
+      in: path
+      required: true
+      description: The id of a previously uploaded source map.
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Source map successfully deleted.
+      content:
+        application/json:
+          schema:
+            type: object

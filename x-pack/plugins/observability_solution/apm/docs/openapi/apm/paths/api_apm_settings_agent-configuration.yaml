@@ -1,0 +1,149 @@
+put:
+  summary: Create or update a configuration
+  description: Create or update an APM agent configuration.
+  operationId: createApmAgentConfig
+  tags:
+    - APM agent configuration
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            service:
+              type: object
+              description: The service identifying the configuration to create or update.
+              properties:
+                name:
+                  type: string
+                  description: The name of the service.
+                  example: frontend
+                environment:
+                  type: string
+                  description: The environment of the service.
+                  example: production
+              required:
+                - name
+            settings:
+              type: object
+              description: >
+                A key/value object with option name and option value. Each APM
+                agent has a list of supported configurations. For more
+                information, refer to the [APM agent
+                documentation](https://www.elastic.co/guide/en/observability/current/apm-agent-configuration.html#_supported_configurations).
+              example:
+                transaction_sample_rate: '0.4'
+                capture_body: 'off'
+                transaction_max_spans: '500'
+            agent_name:
+              type: string
+              description: >-
+                The agent name. This is used by the UI to determine which
+                settings to display.
+              example: nodejs
+          required:
+            - service
+            - settings
+  responses:
+    '200':
+      description: Configuration successfully created.
+      content:
+        application/json:
+          schema:
+            type: object
+delete:
+  summary: Delete a configuration
+  description: |
+    Delete an APM agent configuration.
+  operationId: deleteApmAgentConfig
+  tags:
+    - APM agent configuration
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            service:
+              type: object
+              description: Service identifying the configuration to delete.
+              properties:
+                name:
+                  type: string
+                  description: Name of service.
+                  example: frontend
+                environment:
+                  type: string
+                  description: Environment of service.
+                  example: production
+              required:
+                - name
+          required:
+            - service
+  responses:
+    '200':
+      description: Configuration successfully deleted.
+      content:
+        application/json:
+          schema:
+            type: object
+get:
+  summary: Get configurations
+  description: |
+    List all APM agent configurations.
+  operationId: listApmAgentConfig
+  tags:
+    - APM agent configuration
+  responses:
+    '200':
+      description: Configuration successfully created.
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                agent_name:
+                  type: string
+                service:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    environment:
+                      type: string
+                settings:
+                  type: object
+                '@timestamp':
+                  type: number
+                applied_by_agent:
+                  type: boolean
+                etag:
+                  type: string
+          examples:
+            basic:
+              summary: Response returning two configurations.
+              value:
+                items:
+                  - agent_name: go
+                    service:
+                      name: opbeans-go
+                      environment: production
+                    settings:
+                      transaction_sample_rate: '1'
+                      capture_body: 'off'
+                      transaction_max_spans: '200'
+                    '@timestamp': 1581934104843
+                    applied_by_agent: false
+                    etag: 1e58c178efeebae15c25c539da740d21dee422fc
+                  - agent_name: nodejs
+                    service:
+                      name: frontend
+                    settings:
+                      transaction_sample_rate: '1'
+                    '@timestamp': 1582031336265
+                    applied_by_agent: false
+                    etag: 5080ed25785b7b19f32713681e79f46996801a5b

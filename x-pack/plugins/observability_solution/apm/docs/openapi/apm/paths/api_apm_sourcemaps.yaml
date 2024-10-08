@@ -1,0 +1,218 @@
+post:
+  summary: Create or update a source map
+  operationId: createSourcemap
+  tags:
+    - APM source maps
+  description: >
+    Create or update a source map for a specific service and version.
+
+
+    You must have `All` Kibana privileges for the APM and User Experience
+    feature. For more information, refer to [Kibana
+    privileges](https://www.elastic.co/guide/en/kibana/current/kibana-privileges.html).
+  requestBody:
+    content:
+      application/json; Elastic-Api-Version=2023-10-31:
+        schema:
+          type: object
+          properties:
+            service_name:
+              description: The name of the service that the source map should apply to.
+              type: string
+            service_version:
+              description: The version of the service that the source map should apply to.
+              type: string
+            bundle_filepath:
+              description: >-
+                The absolute path of the final bundle as used in the web
+                application.
+              type: string
+            sourcemap:
+              description: >-
+                The source map. It must follow the [source map revision 3
+                proposal](https://docs.google.com/document/d/1U1RGAehQwRypUTovF1KRlpiOFze0b-_2gc6fAH0KY0k).
+              type: string
+          required:
+            - service_name
+            - service_version
+            - bundle_filepath
+            - sourcemap
+        examples:
+          file:
+            summary: Upload a source map as a file.
+            value:
+              service_name: foo
+              service_version: 1.0.0
+              bundle_filepath: /test/e2e/general-usecase/bundle.js
+              sourcemap: '@path/to/source_map/bundle.js.map'
+          inline:
+            summary: Include the source map contents inline.
+            value:
+              value: null
+              service_name: foo
+              service_version: 1.0.0
+              bundle_filepath: /test/e2e/general-usecase/bundle.js
+              sourcemap: >-
+                {\"version\":3,\"file\":\"static/js/main.chunk.js\",\"sources\":[\"fleet-source-map-client/src/index.css\",\"fleet-source-map-client/src/App.js\",\"webpack:///./src/index.css?bb0a\",\"fleet-source-map-client/src/index.js\",\"fleet-source-map-client/src/reportWebVitals.js\"],\"sourcesContent\":[\"content\"],\"mappings\":\"mapping\",\"sourceRoot\":\"\"}
+  responses:
+    '200':
+      description: Source map successfully created.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              type:
+                type: string
+                example: sourcemap
+              identifier:
+                type: string
+                example: foo-1.0.0
+              relative_url:
+                type: string
+                example: >-
+                  /api/fleet/artifacts/foo-1.0.0/644fd5a997d1ddd90ee131ba18e2b3d03931d89dd1fe4599143c0b3264b3e456
+              body:
+                type: string
+                example: >-
+                  eJyFkL1OwzAUhd/Fc+MbYMuCEBIbHRjKgBgc96R16tiWr1OQqr47NwqJxEK3q/PzWccXxchnZ7E1A1SjuhjVZtF2yOxiEPlO17oWox3D3uPFeSRTjmJQARfCPeiAgGx8NTKsYdAc1T3rwaSJGcds8Sp3c1HnhfywUZ3QhMTFFGepZxqMC9oex3CS9tpk1XyozgOlmoVKuJX1DqEQZ0su7PGtLU+V/3JPKc3cL7TJ2FNDRPov4bFta3MDM4f7W69lpJjLO9qdK8bzVPhcJz3HUCQ4LbO/p5hCSC4cZPByrp/wFqOklbpefwAhzpqI
+              created:
+                format: date-time
+                type: string
+                example: '2021-07-09T20:47:44.812Z'
+              id:
+                type: string
+                example: >-
+                  apm:foo-1.0.0-644fd5a997d1ddd90ee131ba18e2b3d03931d89dd1fe4599143c0b3264b3e456
+              compressionAlgorithm:
+                type: string
+                example: zlib
+              decodedSha256:
+                type: string
+                example: >-
+                  644fd5a997d1ddd90ee131ba18e2b3d03931d89dd1fe4599143c0b3264b3e456
+              decodedSize:
+                type: number
+                example: 441
+              encodedSha256:
+                type: string
+                example: >-
+                  024c72749c3e3dd411b103f7040ae62633558608f480bce4b108cf5b2275bd24
+              encodedSize:
+                type: number
+                example: 237
+              encryptionAlgorithm:
+                type: string
+                example: none
+              packageName:
+                type: string
+                example: apm
+get:
+  summary: Get source maps
+  operationId: getSourcemap
+  tags:
+    - APM source maps
+  description: >
+    Returns an array of Fleet artifacts, including source map uploads.
+
+
+    You must have `Read` or `All` Kibana privileges for the APM and User
+    Experience feature.
+
+    For more information, refer to [Kibana
+    privileges](https://www.elastic.co/guide/en/kibana/current/kibana-privileges.html).
+  responses:
+    '200':
+      description: Source map successfully retrieved.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              artifacts:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      example: sourcemap
+                    identifier:
+                      type: string
+                      example: foo-1.0.0
+                    relative_url:
+                      type: string
+                      example: >-
+                        /api/fleet/artifacts/foo-1.0.0/644fd5a997d1ddd90ee131ba18e2b3d03931d89dd1fe4599143c0b3264b3e456
+                    body:
+                      type: object
+                      properties:
+                        serviceName:
+                          type: string
+                          example: foo
+                        serviceVersion:
+                          type: string
+                          example: 1.0.0
+                        bundleFilepath:
+                          type: string
+                          example: /test/e2e/general-usecase/bundle.js
+                        sourceMap:
+                          type: object
+                          properties:
+                            version:
+                              type: integer
+                              example: 3
+                            file:
+                              type: string
+                              example: static/js/main.chunk.js
+                            sources:
+                              type: array
+                              items:
+                                type: string
+                              example:
+                                - fleet-source-map-client/src/index.css
+                                - fleet-source-map-client/src/App.js
+                                - webpack:#/./src/index.css?bb0a
+                                - fleet-source-map-client/src/index.js
+                                - fleet-source-map-client/src/reportWebVitals.js
+                            sourcesContent:
+                              type: array
+                              items:
+                                type: string
+                              example:
+                                - content
+                            mappings:
+                              type: string
+                              example: mapping
+                            sourceRoot:
+                              type: string
+                    created:
+                      type: string
+                      example: '2021-07-09T20:47:44.812Z'
+                    id:
+                      type: string
+                      example: >-
+                        apm:foo-1.0.0-644fd5a997d1ddd90ee131ba18e2b3d03931d89dd1fe4599143c0b3264b3e456
+                    compressionAlgorithm:
+                      type: string
+                      example: zlib
+                    decodedSha256:
+                      type: string
+                      example: >-
+                        644fd5a997d1ddd90ee131ba18e2b3d03931d89dd1fe4599143c0b3264b3e456
+                    decodedSize:
+                      type: number
+                      example: 441
+                    encodedSha256:
+                      type: string
+                      example: >-
+                        024c72749c3e3dd411b103f7040ae62633558608f480bce4b108cf5b2275bd24
+                    encodedSize:
+                      type: number
+                      example: 237
+                    encryptionAlgorithm:
+                      type: string
+                      example: none
+                    packageName:
+                      type: string
+                      example: apm

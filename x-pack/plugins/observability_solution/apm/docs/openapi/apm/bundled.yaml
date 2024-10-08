@@ -8,31 +8,29 @@ info:
     url: https://www.elastic.co/licensing/elastic-license
 tags:
   - name: APM agent configuration
-    description: >
+    description: |
       Fine tune your APM agent configuration without redeploying your application.
     externalDocs:
       description: APM agent central config docs
       url: https://www.elastic.co/guide/en/observability/current/apm-agent-configuration.html#_supported_configurations
   - name: APM agent keys
-    description: >
+    description: |
       Configure APM agent keys to authorize requests from APM agents to the APM Server.
     externalDocs:
       description: APM agent API key docs
       url: https://www.elastic.co/guide/en/observability/current/apm-api-key.html
   - name: APM annotations
-    description: >
-      Annotate visualizations in the APM UI with significant events.
-      Annotations enable you to easily see how events are impacting the performance of your applications.
+    description: |
+      Annotate visualizations in the APM UI with significant events. Annotations enable you to easily see how events are impacting the performance of your applications.
     externalDocs:
       description: APM annotations docs
       url: https://www.elastic.co/guide/en/observability/current/apm-transactions-annotations.html
   - name: APM source maps
-    description: >
-      Upload source maps to map minified files back to original source code.
-      Source maps allow you to maintain the speed advantage of minified code without losing the ability to debug your application.
+    description: |
+      Upload source maps to map minified files back to original source code. Source maps allow you to maintain the speed advantage of minified code without losing the ability to debug your application.
     externalDocs:
-        description: APM source map docs
-        url: https://www.elastic.co/guide/en/observability/current/apm-source-map-how-to.html
+      description: APM source map docs
+      url: https://www.elastic.co/guide/en/observability/current/apm-source-map-how-to.html
 paths:
   /api/apm/agent_keys:
     post:
@@ -68,12 +66,14 @@ paths:
                     enum:
                       - event:write
                       - config_agent:read
-                  example: ["event:write", "config_agent:read"]
+                  example:
+                    - event:write
+                    - config_agent:read
               required:
                 - name
                 - privileges
       responses:
-        "200":
+        '200':
           description: The agent key was created successfully.
           content:
             application/json:
@@ -132,9 +132,9 @@ paths:
                     environment:
                       type: string
                       description: Environment of service.
-                      example: 'production'
+                      example: production
                   required:
-                  - version
+                    - version
                 '@timestamp':
                   type: string
                   description: |
@@ -153,11 +153,14 @@ paths:
                     Defaults to `["apm"]`, and while you can add additional tags, you cannot remove the `apm` tag.
                   items:
                     type: string
-                  default: ['apm']
-                  example: ['apm', 'my-tag']
+                  default:
+                    - apm
+                  example:
+                    - apm
+                    - my-tag
               required:
-              - '@timestamp'
-              - service
+                - '@timestamp'
+                - service
       responses:
         '200':
           description: Annotation created successfully
@@ -214,14 +217,16 @@ paths:
                         type: array
                         items:
                           type: string
-                        example: ["apm", "elastic.co", "customer"]
+                        example:
+                          - apm
+                          - elastic.co
+                          - customer
                       event:
                         type: object
                         properties:
                           created:
                             type: string
                             example: '2024-08-30T15:46:43.259Z'
-
   /api/apm/services/{serviceName}/annotation/search:
     get:
       summary: Search for annotations
@@ -255,7 +260,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: Successful response
           content:
             application/json:
@@ -273,7 +278,7 @@ paths:
                             - version
                         id:
                           type: string
-                        "@timestamp":
+                        '@timestamp':
                           type: number
                           example: 1721557890452
                         text:
@@ -323,7 +328,7 @@ paths:
               inline:
                 summary: Include the source map contents inline.
                 value:
-                  value:
+                  value: null
                   service_name: foo
                   service_version: 1.0.0
                   bundle_filepath: /test/e2e/general-usecase/bundle.js
@@ -532,10 +537,8 @@ paths:
                     - name
                 settings:
                   type: object
-                  description: >
-                    A key/value object with option name and option value.
-                    Each APM agent has a list of supported configurations.
-                    For more information, refer to the [APM agent documentation](https://www.elastic.co/guide/en/observability/current/apm-agent-configuration.html#_supported_configurations).
+                  description: |
+                    A key/value object with option name and option value. Each APM agent has a list of supported configurations. For more information, refer to the [APM agent documentation](https://www.elastic.co/guide/en/observability/current/apm-agent-configuration.html#_supported_configurations).
                   example:
                     transaction_sample_rate: '0.4'
                     capture_body: 'off'
@@ -619,7 +622,7 @@ paths:
                           type: string
                     settings:
                       type: object
-                    "@timestamp":
+                    '@timestamp':
                       type: number
                     applied_by_agent:
                       type: boolean
@@ -632,21 +635,21 @@ paths:
                     items:
                       - agent_name: go
                         service:
-                            name: opbeans-go
-                            environment: production
+                          name: opbeans-go
+                          environment: production
                         settings:
-                            transaction_sample_rate: "1"
-                            capture_body: off
-                            transaction_max_spans: "200"
-                        "@timestamp": 1581934104843
+                          transaction_sample_rate: '1'
+                          capture_body: 'off'
+                          transaction_max_spans: '200'
+                        '@timestamp': 1581934104843
                         applied_by_agent: false
                         etag: 1e58c178efeebae15c25c539da740d21dee422fc
                       - agent_name: nodejs
                         service:
                           name: frontend
                         settings:
-                          transaction_sample_rate: "1"
-                        "@timestamp": 1582031336265
+                          transaction_sample_rate: '1'
+                        '@timestamp': 1582031336265
                         applied_by_agent: false
                         etag: 5080ed25785b7b19f32713681e79f46996801a5b
   /api/apm/settings/agent-configuration/search:
@@ -716,8 +719,8 @@ paths:
                       settings:
                         type: object
                         example:
-                          transaction_sample_rate: "1"
-                      "@timestamp":
+                          transaction_sample_rate: '1'
+                      '@timestamp':
                         type: number
                         example: 1582031336265
                       applied_by_agent:
@@ -726,5 +729,4 @@ paths:
                       etag:
                         type: string
                         example: 5080ed25785b7b19f32713681e79f46996801a5b
-
-
+components: {}
