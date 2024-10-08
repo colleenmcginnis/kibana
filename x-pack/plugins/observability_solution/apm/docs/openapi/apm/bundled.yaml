@@ -100,7 +100,6 @@ paths:
       summary: Create or update an annotation
       description: |
         Create a new annotation for a specific service.
-
         By default, annotations are stored in a newly created `observability-annotations` index.
         The name of this index can be changed in your `config.yml` by editing `xpack.observability.annotations.index`.
         If you change the default index name, you’ll also need to update your [user privileges](https://www.elastic.co/guide/en/observability/current/apm-app-annotation-user-create.html) accordingly.
